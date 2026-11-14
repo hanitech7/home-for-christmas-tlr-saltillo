@@ -40,7 +40,7 @@
     const m = error?.message || String(error);
     if (m.includes("Invalid login credentials")) return "Correo o contraseña incorrectos.";
     if (m.includes("Failed to fetch")) return "Sin conexión. Revisa tu internet.";
-    if (m.includes("estudiantes_grupo_check")) return "Elige un grupo válido.";
+    if (m.includes("estudiantes_grupo_check")) return "Elige un grupo pequeño válido.";
     if (m.includes("estudiantes_edad_check")) return "La edad debe estar entre 10 y 99.";
     if (m.includes("JWT expired")) return "Tu sesión expiró. Vuelve a entrar.";
     return m;
@@ -76,7 +76,8 @@
     $("#pantalla-login").hidden = logueado;
     $("#pantalla-panel").hidden = !logueado;
     if (logueado) {
-      $("#usuario-email").textContent = sesion.user.email;
+      pintarUsuario(sesion.user);
+      if (!nombreDe(sesion.user)) setTimeout(abrirPerfil, 400); // primera vez: pedir nombre
       cargar();
     } else {
       estudiantes = [];
@@ -105,14 +106,60 @@
   });
 
   $("#btn-salir").addEventListener("click", () => db.auth.signOut());
+
+  // Ver / ocultar contraseña
   $("#btn-ver-pass").addEventListener("click", (e) => {
-  const input = $("#form-login").password;
-  const visible = input.type === "text";
-  input.type = visible ? "password" : "text";
-  e.currentTarget.textContent = visible ? "Ver" : "Ocultar";
-  e.currentTarget.setAttribute("aria-label", visible ? "Mostrar contraseña" : "Ocultar contraseña");
-  input.focus();
-});
+    const input = $("#form-login").password;
+    const visible = input.type === "text";
+    input.type = visible ? "password" : "text";
+    e.currentTarget.textContent = visible ? "Ver" : "Ocultar";
+    e.currentTarget.setAttribute("aria-label", visible ? "Mostrar contraseña" : "Ocultar contraseña");
+    input.focus();
+  });
+
+  // ---------- Mi perfil (nombre del líder) ----------
+  function nombreDe(user) {
+    return (user && user.user_metadata && user.user_metadata.nombre) || "";
+  }
+
+  function pintarUsuario(user) {
+    const nombre = nombreDe(user);
+    $("#usuario-nombre").textContent = nombre || user.email;
+    $("#usuario-inicial").textContent = (nombre || user.email || "?").trim().charAt(0).toUpperCase();
+  }
+
+  const dlgPerfil = $("#dlg-perfil");
+  const formPerfil = $("#form-perfil");
+
+  async function abrirPerfil() {
+    if (dlgPerfil.open) return;
+    const { data } = await db.auth.getUser();
+    if (!data.user) return;
+    formPerfil.nombre.value = nombreDe(data.user);
+    $("[data-correo]", formPerfil).textContent = data.user.email;
+    $(".form__error", formPerfil).textContent = "";
+    dlgPerfil.showModal();
+    formPerfil.nombre.focus();
+  }
+
+  $("#btn-perfil").addEventListener("click", abrirPerfil);
+
+  formPerfil.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $(".form__error", formPerfil);
+    const nombre = formPerfil.nombre.value.trim();
+    if (nombre.length < 2) return (err.textContent = "Escribe tu nombre.");
+
+    ocupado(formPerfil, true);
+    const { data, error } = await db.auth.updateUser({ data: { nombre } });
+    if (!error) await db.auth.refreshSession(); // para que los nuevos registros ya lleven tu nombre
+    ocupado(formPerfil, false);
+    if (error) return (err.textContent = mensajeError(error));
+
+    pintarUsuario(data.user);
+    dlgPerfil.close();
+    toast(`¡Listo, ${nombre}!`);
+  });
 
   // ---------- Cargar y pintar ----------
   async function cargar() {
