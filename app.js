@@ -52,6 +52,7 @@
 
   // ---------- Estado ----------
   let estudiantes = [];
+  let carros = [];
   let actual = null; // estudiante abierto en un modal
 
   // ---------- Inicializar selects y textos ----------
@@ -164,17 +165,24 @@
   // ---------- Cargar y pintar ----------
   async function cargar() {
     $("#lista").innerHTML = '<p class="vacio">Cargando…</p>';
-    const { data, error } = await db.from("estudiantes_resumen").select("*").order("nombre_completo");
+    const [resE, resC] = await Promise.all([
+      db.from("estudiantes_resumen").select("*").order("nombre_completo"),
+      db.from("carros").select("*").order("dueno"),
+    ]);
+    const error = resE.error || resC.error;
     if (error) {
       $("#lista").innerHTML = `<p class="vacio">No se pudo cargar: ${esc(mensajeError(error))}</p>`;
       return;
     }
+    carros = resC.data;
+    const data = resE.data;
     estudiantes = data.map((e) => ({
       ...e,
       total_abonado: Number(e.total_abonado),
       restante: Number(e.restante),
     }));
     pintar();
+    pintarCarros();
   }
 
   function filtrados() {
@@ -182,10 +190,13 @@
     const qDig = soloDigitos(q);
     const grupo = $("#filtro-grupo").value;
     const estado = $("#filtro-estado").value;
+    const carro = $("#filtro-carro").value;
     return estudiantes.filter((e) => {
       if (grupo && e.grupo !== grupo) return false;
       if (estado === "pagado" && !e.pagado) return false;
       if (estado === "pendiente" && e.pagado) return false;
+      if (carro === "__sin" && e.carro_id) return false;
+      if (carro && carro !== "__sin" && e.carro_id !== carro) return false;
       if (!q) return true;
       return (
         normalizar(e.nombre_completo).includes(q) ||
@@ -228,6 +239,7 @@
             <div>
               <h3 class="card__name">${esc(e.nombre_completo)}</h3>
               <div class="card__meta"><span class="grupo">${esc(e.grupo)}</span>${esc(e.edad)} años</div>
+              ${e.carro_dueno ? `<div class="carro-chip">Carro de <strong>${esc(e.carro_dueno)}</strong></div>` : '<div class="carro-chip carro-chip--sin">Sin carro</div>'}
             </div>
             ${e.pagado ? '<span class="badge badge--ok">Liquidado</span>' : `<span class="badge badge--pend">Faltan ${dinero(e.restante)}</span>`}
           </div>
@@ -246,7 +258,7 @@
       .join("");
   }
 
-  ["#buscar", "#filtro-grupo", "#filtro-estado"].forEach((s) => $(s).addEventListener("input", pintar));
+  ["#buscar", "#filtro-grupo", "#filtro-estado", "#filtro-carro"].forEach((s) => $(s).addEventListener("input", pintar));
 
   $("#lista").addEventListener("click", (e) => {
     const a = e.target.closest("[data-abonar]");
@@ -364,6 +376,7 @@
     f.grupo.value = actual.grupo;
     f.correo.value = actual.correo;
     f.telefono.value = actual.telefono;
+    llenarSelectCarro(f.carro, actual.carro_id);
     $("[data-meta]", f).textContent =
       `Registrado ${fecha(actual.created_at)}${actual.registrado_por ? " por " + actual.registrado_por : ""}`;
     dlgModificar.showModal();
@@ -420,6 +433,7 @@
       grupo: f.grupo.value,
       correo: f.correo.value.trim().toLowerCase(),
       telefono: f.telefono.value.trim(),
+      carro_id: f.carro.value || null,
     };
     if (soloDigitos(cambios.telefono).length < 10) return (err.textContent = "El teléfono debe tener al menos 10 dígitos.");
 
@@ -435,8 +449,8 @@
 
   // ---------- Descargar CSV ----------
   $("#btn-csv").addEventListener("click", () => {
-    const cols = ["nombre_completo", "edad", "grupo", "correo", "telefono", "total_abonado", "restante", "pagado", "registrado_por", "created_at"];
-    const titulos = ["Nombre", "Edad", "Grupo", "Correo", "Teléfono", "Abonado", "Restante", "Liquidado", "Registró", "Fecha de registro"];
+    const cols = ["nombre_completo", "edad", "grupo", "correo", "telefono", "carro_dueno", "total_abonado", "restante", "pagado", "registrado_por", "created_at"];
+    const titulos = ["Nombre", "Edad", "Grupo", "Correo", "Teléfono", "Carro", "Abonado", "Restante", "Liquidado", "Registró", "Fecha de registro"];
     const celda = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const filas = filtrados().map((e) =>
       cols.map((c) => celda(c === "pagado" ? (e.pagado ? "Sí" : "No") : c === "created_at" ? fecha(e.created_at) : e[c])).join(",")
@@ -448,5 +462,172 @@
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+  });
+  // =========================================================
+  //  CARROS
+  // =========================================================
+  const ocupadosDe = (carroId) => estudiantes.filter((e) => e.carro_id === carroId);
+
+  // Pestañas Estudiantes / Carros
+  $$("[data-tab]").forEach((b) =>
+    b.addEventListener("click", () => {
+      $$("[data-tab]").forEach((x) => x.classList.toggle("is-on", x === b));
+      $("#vista-estudiantes").hidden = b.dataset.tab !== "estudiantes";
+      $("#vista-carros").hidden = b.dataset.tab !== "carros";
+    })
+  );
+
+  function llenarSelectCarro(sel, actualId) {
+    sel.innerHTML =
+      '<option value="">Sin carro</option>' +
+      carros
+        .map((c) => {
+          const ocup = ocupadosDe(c.id).length;
+          const lleno = ocup >= c.lugares && c.id !== actualId;
+          return `<option value="${c.id}" ${c.id === actualId ? "selected" : ""} ${lleno ? "disabled" : ""}>${esc(c.dueno)} (${ocup}/${c.lugares})${lleno ? " · lleno" : ""}</option>`;
+        })
+        .join("");
+  }
+
+  function pintarCarros() {
+    // filtro de carros en la vista de estudiantes
+    const fc = $("#filtro-carro");
+    const elegido = fc.value;
+    fc.innerHTML =
+      '<option value="">Todos los carros</option><option value="__sin">Sin carro</option>' +
+      carros.map((c) => `<option value="${c.id}">Carro de ${esc(c.dueno)}</option>`).join("");
+    fc.value = [...fc.options].some((o) => o.value === elegido) ? elegido : "";
+
+    const sinCarro = estudiantes.filter((e) => !e.carro_id);
+    const lugaresTot = carros.reduce((s, c) => s + c.lugares, 0);
+    const asignados = estudiantes.length - sinCarro.length;
+    $("#resumen-carros").textContent = carros.length
+      ? `${carros.length} carro${carros.length === 1 ? "" : "s"} · ${asignados} de ${estudiantes.length} estudiantes con carro · ${Math.max(0, lugaresTot - asignados)} lugares libres`
+      : "Todavía no hay carros.";
+
+    const opcionesSin = sinCarro
+      .map((e) => `<option value="${e.id}">${esc(e.nombre_completo)} · ${esc(e.grupo)}</option>`)
+      .join("");
+
+    $("#lista-carros").innerHTML = carros.length
+      ? carros
+          .map((c) => {
+            const pas = ocupadosDe(c.id);
+            const lleno = pas.length >= c.lugares;
+            const vacios = Math.max(0, c.lugares - pas.length);
+            return `
+        <article class="card">
+          <div class="card__top">
+            <div>
+              <h3 class="card__name">Carro de ${esc(c.dueno)}</h3>
+            </div>
+            <span class="carro__lugares ${lleno ? "is-full" : ""}">${pas.length}/${c.lugares}</span>
+          </div>
+          ${c.notas ? `<p class="carro__notas">${esc(c.notas)}</p>` : ""}
+          <ul class="pasajeros">
+            ${pas.map((e) => `<li><span>${esc(e.nombre_completo)}<small>${esc(e.grupo)}</small></span><button type="button" class="quitar" data-quitar="${e.id}">Quitar</button></li>`).join("")}
+            ${'<li class="vacio-lugar">Lugar libre</li>'.repeat(Math.min(vacios, 2))}${vacios > 2 ? `<li class="vacio-lugar">+${vacios - 2} lugares libres</li>` : ""}
+          </ul>
+          ${
+            lleno
+              ? ""
+              : sinCarro.length
+              ? `<select class="agregar" data-agregar="${c.id}"><option value="">+ Agregar persona…</option>${opcionesSin}</select>`
+              : '<p class="carro__notas">Todos los estudiantes ya tienen carro.</p>'
+          }
+          <div class="card__actions"><button type="button" class="btn btn--ghost btn--sm" data-editar-carro="${c.id}" style="grid-column:1/-1">Editar carro</button></div>
+        </article>`;
+          })
+          .join("")
+      : '<div class="vacio"><strong>¡A rodar!</strong>Crea el primer carro con “+ Nuevo carro”.</div>';
+
+    $("#num-sin-carro").textContent = `(${sinCarro.length})`;
+    $("#lista-sin-carro").innerHTML = sinCarro.length
+      ? sinCarro.map((e) => `<span class="persona">${esc(e.nombre_completo)}<small>${esc(e.grupo)}</small></span>`).join("")
+      : '<p class="contador">Todos tienen carro asignado.</p>';
+  }
+
+  async function asignarCarro(estudianteId, carroId) {
+    const { error } = await db.from("estudiantes").update({ carro_id: carroId }).eq("id", estudianteId);
+    if (error) {
+      toast(mensajeError(error), true);
+      pintarCarros();
+      return;
+    }
+    const e = estudiantes.find((x) => x.id === estudianteId);
+    const c = carros.find((x) => x.id === carroId);
+    toast(c ? `${e.nombre_completo} va en el carro de ${c.dueno}.` : `${e.nombre_completo} quedó sin carro.`);
+    cargar();
+  }
+
+  $("#lista-carros").addEventListener("change", (e) => {
+    const sel = e.target.closest("[data-agregar]");
+    if (sel && sel.value) asignarCarro(sel.value, sel.dataset.agregar);
+  });
+  $("#lista-carros").addEventListener("click", (e) => {
+    const q = e.target.closest("[data-quitar]");
+    const ed = e.target.closest("[data-editar-carro]");
+    if (q) asignarCarro(q.dataset.quitar, null);
+    if (ed) abrirCarro(ed.dataset.editarCarro);
+  });
+
+  // Nuevo / editar carro
+  const dlgCarro = $("#dlg-carro");
+  const formCarro = $("#form-carro");
+  let carroActual = null;
+
+  function abrirCarro(id) {
+    carroActual = id ? carros.find((c) => c.id === id) : null;
+    formCarro.reset();
+    $(".form__error", formCarro).textContent = "";
+    $("[data-titulo]", formCarro).textContent = carroActual ? "Editar carro" : "Nuevo carro";
+    $("[data-borrar-carro]", formCarro).hidden = !carroActual;
+    if (carroActual) {
+      formCarro.dueno.value = carroActual.dueno;
+      formCarro.lugares.value = carroActual.lugares;
+      formCarro.notas.value = carroActual.notas || "";
+    }
+    dlgCarro.showModal();
+    formCarro.dueno.focus();
+  }
+
+  $("#btn-nuevo-carro").addEventListener("click", () => abrirCarro(null));
+
+  formCarro.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $(".form__error", formCarro);
+    err.textContent = "";
+    const datos = {
+      dueno: formCarro.dueno.value.trim(),
+      lugares: parseInt(formCarro.lugares.value, 10),
+      notas: formCarro.notas.value.trim() || null,
+    };
+    if (datos.dueno.length < 2) return (err.textContent = "Escribe el nombre del dueño.");
+    if (!(datos.lugares >= 1 && datos.lugares <= 15)) return (err.textContent = "Los lugares deben ser de 1 a 15.");
+    if (carroActual && ocupadosDe(carroActual.id).length > datos.lugares)
+      return (err.textContent = `Ya van ${ocupadosDe(carroActual.id).length} personas; quita a alguien primero.`);
+
+    ocupado(formCarro, true);
+    const { error } = carroActual
+      ? await db.from("carros").update(datos).eq("id", carroActual.id)
+      : await db.from("carros").insert(datos);
+    ocupado(formCarro, false);
+    if (error) return (err.textContent = mensajeError(error));
+
+    dlgCarro.close();
+    toast(carroActual ? "Carro actualizado." : `Carro de ${datos.dueno} creado.`);
+    cargar();
+  });
+
+  $("[data-borrar-carro]", formCarro).addEventListener("click", async () => {
+    if (!carroActual) return;
+    const n = ocupadosDe(carroActual.id).length;
+    const aviso = n ? ` Las ${n} personas asignadas quedarán sin carro.` : "";
+    if (!window.confirm(`¿Borrar el carro de ${carroActual.dueno}?${aviso}`)) return;
+    const { error } = await db.from("carros").delete().eq("id", carroActual.id);
+    if (error) return ($(".form__error", formCarro).textContent = mensajeError(error));
+    dlgCarro.close();
+    toast("Carro borrado.");
+    cargar();
   });
 })();
