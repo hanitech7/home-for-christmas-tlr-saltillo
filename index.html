@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Home for Christmas · The Living Room</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=DM+Serif+Display&family=Yellowtail&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ===================== LOGIN ===================== -->
+  <section id="pantalla-login" class="login" hidden>
+    <div class="login__card">
+      <p class="eyebrow">The Living Room</p>
+      <h1 class="logo"><span class="logo__serif">Home For</span><span class="logo__script">Christmas</span></h1>
+      <p class="tags">Cabañas · 4–5 Dic.</p>
+
+      <form id="form-login" class="form" autocomplete="on">
+        <label>Correo
+          <input type="email" name="email" required autocomplete="username" placeholder="lider@correo.com" />
+        </label>
+        <label>Contraseña
+          <input type="password" name="password" required autocomplete="current-password" />
+        </label>
+        <p class="form__error" id="login-error" role="alert"></p>
+        <button class="btn btn--red btn--full" type="submit">Entrar</button>
+      </form>
+      <p class="login__note">Acceso solo para líderes de grupo pequeño.</p>
+    </div>
+  </section>
+
+  <!-- ===================== PANEL ===================== -->
+  <section id="pantalla-panel" class="panel" hidden>
+    <header class="topbar">
+      <div class="topbar__brand">
+        <span class="eyebrow">The Living Room</span>
+        <span class="topbar__title">Home For <em>Christmas</em></span>
+      </div>
+      <div class="topbar__user">
+        <span id="usuario-email" class="topbar__email"></span>
+        <button id="btn-salir" class="btn btn--ghost btn--sm" type="button">Salir</button>
+      </div>
+    </header>
+
+    <div class="hero">
+      <div class="hero__dates"><span>4–5</span><span>Dic.</span></div>
+      <p class="tags hero__tags">Mensaje de Navidad · Cabañas · Worship acústica<br />Juegos · Posada · Fogata</p>
+    </div>
+
+    <main class="wrap">
+      <section class="stats" aria-label="Resumen">
+        <div class="stat"><span class="stat__label">Registrados</span><span class="stat__value" id="st-registrados">0</span></div>
+        <div class="stat"><span class="stat__label">Liquidados</span><span class="stat__value" id="st-liquidados">0</span></div>
+        <div class="stat"><span class="stat__label">Recaudado</span><span class="stat__value" id="st-recaudado">$0</span></div>
+        <div class="stat"><span class="stat__label">Por cobrar</span><span class="stat__value" id="st-porcobrar">$0</span></div>
+      </section>
+
+      <section class="toolbar">
+        <input id="buscar" class="toolbar__search" type="search" placeholder="Buscar por nombre, correo o teléfono…" autocomplete="off" />
+        <select id="filtro-grupo" aria-label="Filtrar por grupo">
+          <option value="">Todos los grupos</option>
+        </select>
+        <select id="filtro-estado" aria-label="Filtrar por pago">
+          <option value="">Todos</option>
+          <option value="pendiente">Con saldo pendiente</option>
+          <option value="pagado">Liquidados</option>
+        </select>
+        <div class="toolbar__actions">
+          <button id="btn-csv" class="btn btn--ghost" type="button">Descargar CSV</button>
+          <button id="btn-nuevo" class="btn btn--red" type="button">+ Nuevo registro</button>
+        </div>
+      </section>
+
+      <p id="contador" class="contador"></p>
+      <section id="lista" class="lista" aria-live="polite"></section>
+    </main>
+  </section>
+
+  <!-- ===================== MODAL: REGISTRO ===================== -->
+  <dialog id="dlg-registro" class="dlg">
+    <form id="form-registro" class="form" method="dialog">
+      <header class="dlg__head">
+        <h2>Nuevo registro</h2>
+        <button class="dlg__close" type="button" data-close aria-label="Cerrar">×</button>
+      </header>
+      <label>Nombre completo
+        <input name="nombre" required minlength="3" autocomplete="off" />
+      </label>
+      <div class="form__row">
+        <label>Edad
+          <input name="edad" type="number" inputmode="numeric" min="10" max="99" required />
+        </label>
+        <label>Grupo pequeño
+          <select name="grupo" required data-grupos>
+            <option value="" disabled selected>Elige…</option>
+          </select>
+        </label>
+      </div>
+      <label>Correo electrónico
+        <input name="correo" type="email" required autocomplete="off" />
+      </label>
+      <label>Número de teléfono
+        <input name="telefono" type="tel" inputmode="tel" required placeholder="81 1234 5678" />
+      </label>
+      <label>Abono al registrarse <span class="hint">($0 – $<span data-costo></span>)</span>
+        <div class="money">
+          <span>$</span>
+          <input name="abono" type="number" inputmode="decimal" min="0" step="1" value="0" required data-max-costo />
+        </div>
+      </label>
+      <div class="chips">
+        <button type="button" class="chip" data-set-abono="0">$0</button>
+        <button type="button" class="chip" data-set-abono="250">$250</button>
+        <button type="button" class="chip" data-set-abono="375">Mitad</button>
+        <button type="button" class="chip" data-set-abono="full">Completo</button>
+      </div>
+      <p class="form__error" role="alert"></p>
+      <footer class="dlg__foot">
+        <button class="btn btn--ghost" type="button" data-close>Cancelar</button>
+        <button class="btn btn--red" type="submit">Registrar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ===================== MODAL: ABONAR ===================== -->
+  <dialog id="dlg-abonar" class="dlg">
+    <form id="form-abonar" class="form" method="dialog">
+      <header class="dlg__head">
+        <h2>Abonar</h2>
+        <button class="dlg__close" type="button" data-close aria-label="Cerrar">×</button>
+      </header>
+      <p class="dlg__who" data-nombre></p>
+      <div class="progress progress--lg"><div class="progress__bar" data-bar></div></div>
+      <p class="dlg__sub" data-resumen></p>
+      <label>¿Cuánto abona hoy?
+        <div class="money">
+          <span>$</span>
+          <input name="monto" type="number" inputmode="decimal" min="1" step="1" required />
+        </div>
+      </label>
+      <div class="chips">
+        <button type="button" class="chip" data-set-monto="100">$100</button>
+        <button type="button" class="chip" data-set-monto="200">$200</button>
+        <button type="button" class="chip" data-set-monto="250">$250</button>
+        <button type="button" class="chip chip--red" data-set-monto="resto">Liquidar</button>
+      </div>
+      <p class="form__error" role="alert"></p>
+      <footer class="dlg__foot">
+        <button class="btn btn--ghost" type="button" data-close>Cancelar</button>
+        <button class="btn btn--red" type="submit">Guardar abono</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ===================== MODAL: MODIFICAR ===================== -->
+  <dialog id="dlg-modificar" class="dlg">
+    <form id="form-modificar" class="form" method="dialog">
+      <header class="dlg__head">
+        <h2>Modificar datos</h2>
+        <button class="dlg__close" type="button" data-close aria-label="Cerrar">×</button>
+      </header>
+      <label>Nombre completo
+        <input name="nombre" required minlength="3" autocomplete="off" />
+      </label>
+      <div class="form__row">
+        <label>Edad
+          <input name="edad" type="number" inputmode="numeric" min="10" max="99" required />
+        </label>
+        <label>Grupo pequeño
+          <select name="grupo" required data-grupos></select>
+        </label>
+      </div>
+      <label>Correo electrónico
+        <input name="correo" type="email" required autocomplete="off" />
+      </label>
+      <label>Número de teléfono
+        <input name="telefono" type="tel" inputmode="tel" required />
+      </label>
+
+      <div class="historial">
+        <h3>Historial de abonos</h3>
+        <ul data-historial></ul>
+        <p class="hint">Si un abono se capturó mal, bórralo y regístralo de nuevo con “Abonar”.</p>
+      </div>
+
+      <p class="meta" data-meta></p>
+      <p class="form__error" role="alert"></p>
+      <footer class="dlg__foot">
+        <button class="btn btn--ghost" type="button" data-close>Cancelar</button>
+        <button class="btn btn--cream" type="submit">Guardar cambios</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
