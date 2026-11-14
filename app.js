@@ -539,7 +539,7 @@
         </article>`;
           })
           .join("")
-      : '<div class="vacio"><strong>¡Ámonos reciooooo!</strong>Crea el primer carro con “+ Nuevo carro”.</div>';
+      : '<div class="vacio"><strong>Ámonos reciooooo!</strong>Crea el primer carro con “+ Nuevo carro”.</div>';
 
     $("#num-sin-carro").textContent = `(${sinCarro.length})`;
     $("#lista-sin-carro").innerHTML = sinCarro.length
