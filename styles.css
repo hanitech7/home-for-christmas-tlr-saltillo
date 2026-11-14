@@ -281,3 +281,14 @@ h1, h2, h3 { margin: 0; font-weight: 400; }
   .lista { grid-template-columns: 1fr; }
   .form__row { grid-template-columns: 1fr; }
 }
+/* Botón para ver/ocultar contraseña */
+.pass { position: relative; }
+.pass input { padding-right: 76px; }
+.pass__toggle {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  font: inherit; font-size: 13px; font-weight: 700;
+  background: var(--pino-claro); color: var(--crema);
+  border: 1px solid var(--musgo); border-radius: 999px;
+  padding: 6px 12px; cursor: pointer;
+}
+.pass__toggle:hover { border-color: var(--arena); }
