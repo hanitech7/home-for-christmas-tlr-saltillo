@@ -24,12 +24,15 @@
           <input type="email" name="email" required autocomplete="username" placeholder="lider@correo.com" />
         </label>
         <label>Contraseña
-          <input type="password" name="password" required autocomplete="current-password" />
-        </label>
+  <div class="pass">
+    <input type="password" name="password" required autocomplete="current-password" />
+    <button type="button" class="pass__toggle" id="btn-ver-pass" aria-label="Mostrar contraseña">Ver</button>
+  </div>
+</label>
         <p class="form__error" id="login-error" role="alert"></p>
         <button class="btn btn--red btn--full" type="submit">Entrar</button>
       </form>
-      <p class="login__note">Acceso solo para líderes de grupo pequeño.</p>
+      <p class="login__note">Acceso solo para core y líderes de grupo pequeño.</p>
     </div>
   </section>
 
