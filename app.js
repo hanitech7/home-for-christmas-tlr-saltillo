@@ -40,7 +40,7 @@
     const m = error?.message || String(error);
     if (m.includes("Invalid login credentials")) return "Correo o contraseña incorrectos.";
     if (m.includes("Failed to fetch")) return "Sin conexión. Revisa tu internet.";
-    if (m.includes("estudiantes_grupo_check")) return "Elige un grupo pequeño válido.";
+    if (m.includes("estudiantes_grupo_check")) return "Elige un grupo válido.";
     if (m.includes("estudiantes_edad_check")) return "La edad debe estar entre 10 y 99.";
     if (m.includes("JWT expired")) return "Tu sesión expiró. Vuelve a entrar.";
     return m;
