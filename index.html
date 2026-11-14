@@ -65,6 +65,12 @@
         <div class="stat"><span class="stat__label">Por cobrar</span><span class="stat__value" id="st-porcobrar">$0</span></div>
       </section>
 
+      <nav class="tabs" aria-label="Secciones">
+        <button type="button" class="tab is-on" data-tab="estudiantes">Estudiantes</button>
+        <button type="button" class="tab" data-tab="carros">Carros</button>
+      </nav>
+
+      <div id="vista-estudiantes">
       <section class="toolbar">
         <input id="buscar" class="toolbar__search" type="search" placeholder="Buscar por nombre, correo o teléfono…" autocomplete="off" />
         <select id="filtro-grupo" aria-label="Filtrar por grupo">
@@ -75,6 +81,10 @@
           <option value="pendiente">Con saldo pendiente</option>
           <option value="pagado">Liquidados</option>
         </select>
+        <select id="filtro-carro" aria-label="Filtrar por carro">
+          <option value="">Todos los carros</option>
+          <option value="__sin">Sin carro</option>
+        </select>
         <div class="toolbar__actions">
           <button id="btn-csv" class="btn btn--ghost" type="button">Descargar CSV</button>
           <button id="btn-nuevo" class="btn btn--red" type="button">+ Nuevo registro</button>
@@ -83,6 +93,19 @@
 
       <p id="contador" class="contador"></p>
       <section id="lista" class="lista" aria-live="polite"></section>
+      </div>
+
+      <!-- ===== Vista de carros ===== -->
+      <div id="vista-carros" hidden>
+        <section class="toolbar toolbar--carros">
+          <p id="resumen-carros" class="contador"></p>
+          <button id="btn-nuevo-carro" class="btn btn--red" type="button">+ Nuevo carro</button>
+        </section>
+        <section id="lista-carros" class="lista" aria-live="polite"></section>
+
+        <h2 class="subtitulo">Sin carro <span id="num-sin-carro"></span></h2>
+        <section id="lista-sin-carro" class="sin-carro"></section>
+      </div>
     </main>
   </section>
 
@@ -186,6 +209,9 @@
       <label>Número de teléfono
         <input name="telefono" type="tel" inputmode="tel" required />
       </label>
+      <label>Carro
+        <select name="carro" data-carros></select>
+      </label>
 
       <div class="historial">
         <h3>Historial de abonos</h3>
@@ -198,6 +224,32 @@
       <footer class="dlg__foot">
         <button class="btn btn--ghost" type="button" data-close>Cancelar</button>
         <button class="btn btn--cream" type="submit">Guardar cambios</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ===================== MODAL: CARRO ===================== -->
+  <dialog id="dlg-carro" class="dlg">
+    <form id="form-carro" class="form" method="dialog">
+      <header class="dlg__head">
+        <h2 data-titulo>Nuevo carro</h2>
+        <button class="dlg__close" type="button" data-close aria-label="Cerrar">×</button>
+      </header>
+      <label>Dueño del carro
+        <input name="dueno" required minlength="2" maxlength="40" placeholder="Ej. Mario" autocomplete="off" />
+      </label>
+      <label>Lugares para pasajeros <span class="hint">(sin contar al que maneja)</span>
+        <input name="lugares" type="number" inputmode="numeric" min="1" max="15" value="4" required />
+      </label>
+      <label>Notas <span class="hint">(opcional)</span>
+        <input name="notas" maxlength="120" placeholder="Ej. Sale de la iglesia a las 7:00 am" autocomplete="off" />
+      </label>
+      <p class="form__error" role="alert"></p>
+      <footer class="dlg__foot">
+        <button class="btn btn--ghost btn--danger" type="button" data-borrar-carro hidden>Borrar carro</button>
+        <span class="dlg__spacer"></span>
+        <button class="btn btn--ghost" type="button" data-close>Cancelar</button>
+        <button class="btn btn--red" type="submit">Guardar</button>
       </footer>
     </form>
   </dialog>
