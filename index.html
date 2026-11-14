@@ -24,11 +24,11 @@
           <input type="email" name="email" required autocomplete="username" placeholder="lider@correo.com" />
         </label>
         <label>Contraseña
-  <div class="pass">
-    <input type="password" name="password" required autocomplete="current-password" />
-    <button type="button" class="pass__toggle" id="btn-ver-pass" aria-label="Mostrar contraseña">Ver</button>
-  </div>
-</label>
+          <div class="pass">
+            <input type="password" name="password" required autocomplete="current-password" />
+            <button type="button" class="pass__toggle" id="btn-ver-pass" aria-label="Mostrar contraseña">Ver</button>
+          </div>
+        </label>
         <p class="form__error" id="login-error" role="alert"></p>
         <button class="btn btn--red btn--full" type="submit">Entrar</button>
       </form>
@@ -44,7 +44,10 @@
         <span class="topbar__title">Home For <em>Christmas</em></span>
       </div>
       <div class="topbar__user">
-        <span id="usuario-email" class="topbar__email"></span>
+        <button id="btn-perfil" class="topbar__perfil" type="button" title="Editar mi perfil">
+          <span class="avatar" id="usuario-inicial">?</span>
+          <span id="usuario-nombre" class="topbar__email"></span>
+        </button>
         <button id="btn-salir" class="btn btn--ghost btn--sm" type="button">Salir</button>
       </div>
     </header>
@@ -195,6 +198,26 @@
       <footer class="dlg__foot">
         <button class="btn btn--ghost" type="button" data-close>Cancelar</button>
         <button class="btn btn--cream" type="submit">Guardar cambios</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ===================== MODAL: MI PERFIL ===================== -->
+  <dialog id="dlg-perfil" class="dlg">
+    <form id="form-perfil" class="form" method="dialog">
+      <header class="dlg__head">
+        <h2>Mi perfil</h2>
+        <button class="dlg__close" type="button" data-close aria-label="Cerrar">×</button>
+      </header>
+      <p class="dlg__sub" data-correo></p>
+      <label>¿Cómo te llamas?
+        <input name="nombre" required minlength="2" maxlength="40" placeholder="Ej. Fer Salas" autocomplete="name" />
+      </label>
+      <p class="hint">Así aparecerás arriba y en los registros y abonos que captures.</p>
+      <p class="form__error" role="alert"></p>
+      <footer class="dlg__foot">
+        <button class="btn btn--ghost" type="button" data-close>Cancelar</button>
+        <button class="btn btn--red" type="submit">Guardar</button>
       </footer>
     </form>
   </dialog>
