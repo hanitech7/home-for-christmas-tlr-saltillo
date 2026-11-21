@@ -90,7 +90,7 @@ h1, h2, h3 { margin: 0; font-weight: 400; }
   display: flex; flex-direction: column; gap: 6px;
   font-size: 13px; font-weight: 600; color: var(--arena);
 }
-.form input, .form select, .toolbar input, .toolbar select {
+.form input, .form select, .form textarea, .toolbar input, .toolbar select {
   font: inherit;
   font-size: 16px; /* evita zoom en iPhone */
   color: var(--crema);
@@ -100,7 +100,7 @@ h1, h2, h3 { margin: 0; font-weight: 400; }
   padding: 11px 12px;
   width: 100%;
 }
-.form input:focus, .form select:focus, .toolbar input:focus, .toolbar select:focus {
+.form input:focus, .form select:focus, .form textarea:focus, .toolbar input:focus, .toolbar select:focus {
   outline: 2px solid var(--rojo);
   outline-offset: 1px;
   border-color: transparent;
@@ -349,3 +349,12 @@ h1, h2, h3 { margin: 0; font-weight: 400; }
   .toolbar { grid-template-columns: 1fr 1fr; }
   .toolbar--carros { grid-template-columns: 1fr; }
 }
+
+/* ---------- Alergias / salud ---------- */
+.form textarea { resize: vertical; min-height: 64px; line-height: 1.4; }
+.salud {
+  font-size: 13px; line-height: 1.35;
+  background: rgba(215,25,15,.12); border: 1px solid rgba(215,25,15,.45);
+  color: #ffd6d2; border-radius: 8px; padding: 7px 10px;
+}
+.salud strong { color: #ffb3ad; font-weight: 700; }

@@ -40,7 +40,7 @@
     const m = error?.message || String(error);
     if (m.includes("Invalid login credentials")) return "Correo o contraseña incorrectos.";
     if (m.includes("Failed to fetch")) return "Sin conexión. Revisa tu internet.";
-    if (m.includes("estudiantes_grupo_check")) return "Elige un grupo válido.";
+    if (m.includes("estudiantes_grupo_check")) return "Elige un grupo pequeño válido.";
     if (m.includes("estudiantes_edad_check")) return "La edad debe estar entre 10 y 99.";
     if (m.includes("JWT expired")) return "Tu sesión expiró. Vuelve a entrar.";
     return m;
@@ -247,6 +247,7 @@
             <a href="tel:${esc(soloDigitos(e.telefono))}">${esc(e.telefono)}</a>
             <a href="mailto:${esc(e.correo)}">${esc(e.correo)}</a>
           </div>
+          ${e.salud ? `<div class="salud"><strong>Alergias / salud:</strong> ${esc(e.salud)}</div>` : ""}
           <div class="progress"><div class="progress__bar ${e.pagado ? "is-full" : ""}" style="width:${pct}%"></div></div>
           <div class="card__money"><span>Abonado <strong>${dinero(e.total_abonado)}</strong></span><span>de ${dinero(COSTO)}</span></div>
           <div class="card__actions">
@@ -297,6 +298,7 @@
       p_correo: f.correo.value.trim().toLowerCase(),
       p_telefono: f.telefono.value.trim(),
       p_abono: Number(f.abono.value || 0),
+      p_salud: f.salud.value.trim() || null,
     };
 
     if (soloDigitos(datos.p_telefono).length < 10) return (err.textContent = "El teléfono debe tener al menos 10 dígitos.");
@@ -376,6 +378,7 @@
     f.grupo.value = actual.grupo;
     f.correo.value = actual.correo;
     f.telefono.value = actual.telefono;
+    f.salud.value = actual.salud || "";
     llenarSelectCarro(f.carro, actual.carro_id);
     $("[data-meta]", f).textContent =
       `Registrado ${fecha(actual.created_at)}${actual.registrado_por ? " por " + actual.registrado_por : ""}`;
@@ -434,6 +437,7 @@
       correo: f.correo.value.trim().toLowerCase(),
       telefono: f.telefono.value.trim(),
       carro_id: f.carro.value || null,
+      salud: f.salud.value.trim() || null,
     };
     if (soloDigitos(cambios.telefono).length < 10) return (err.textContent = "El teléfono debe tener al menos 10 dígitos.");
 
@@ -449,8 +453,8 @@
 
   // ---------- Descargar CSV ----------
   $("#btn-csv").addEventListener("click", () => {
-    const cols = ["nombre_completo", "edad", "grupo", "correo", "telefono", "carro_dueno", "total_abonado", "restante", "pagado", "registrado_por", "created_at"];
-    const titulos = ["Nombre", "Edad", "Grupo", "Correo", "Teléfono", "Carro", "Abonado", "Restante", "Liquidado", "Registró", "Fecha de registro"];
+    const cols = ["nombre_completo", "edad", "grupo", "correo", "telefono", "salud", "carro_dueno", "total_abonado", "restante", "pagado", "registrado_por", "created_at"];
+    const titulos = ["Nombre", "Edad", "Grupo", "Correo", "Teléfono", "Alergias / salud", "Carro", "Abonado", "Restante", "Liquidado", "Registró", "Fecha de registro"];
     const celda = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const filas = filtrados().map((e) =>
       cols.map((c) => celda(c === "pagado" ? (e.pagado ? "Sí" : "No") : c === "created_at" ? fecha(e.created_at) : e[c])).join(",")
@@ -539,7 +543,7 @@
         </article>`;
           })
           .join("")
-      : '<div class="vacio"><strong>Ámonos reciooooo!</strong>Crea el primer carro con “+ Nuevo carro”.</div>';
+      : '<div class="vacio"><strong>¡A rodar!</strong>Crea el primer carro con “+ Nuevo carro”.</div>';
 
     $("#num-sin-carro").textContent = `(${sinCarro.length})`;
     $("#lista-sin-carro").innerHTML = sinCarro.length
